@@ -1,0 +1,58 @@
+<div class="page-container">
+  <h1 class="h3 mb-3">{{ isEditMode ? 'Edit Customer' : 'New Customer' }}</h1>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="card p-4">
+    <div class="mb-3">
+      <label class="form-label">First Name</label>
+      <input type="text" class="form-control" formControlName="first_name" />
+      <div class="text-danger small" *ngIf="fieldErrors['first_name']">
+        {{ fieldErrors['first_name'][0] }}
+      </div>
+      <div class="text-danger small" *ngIf="form.get('first_name')?.touched && form.get('first_name')?.invalid">
+        First name is required.
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Last Name</label>
+      <input type="text" class="form-control" formControlName="last_name" />
+      <div class="text-danger small" *ngIf="fieldErrors['last_name']">
+        {{ fieldErrors['last_name'][0] }}
+      </div>
+      <div class="text-danger small" *ngIf="form.get('last_name')?.touched && form.get('last_name')?.invalid">
+        Last name is required.
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email Address</label>
+      <input type="email" class="form-control" formControlName="email" />
+      <div class="text-danger small" *ngIf="fieldErrors['email']">
+        {{ fieldErrors['email'][0] }}
+      </div>
+      <div class="text-danger small" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+        A valid, unique email is required.
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Contact Number</label>
+      <input type="text" class="form-control" formControlName="contact_number" />
+      <div class="text-danger small" *ngIf="fieldErrors['contact_number']">
+        {{ fieldErrors['contact_number'][0] }}
+      </div>
+      <div class="text-danger small" *ngIf="form.get('contact_number')?.touched && form.get('contact_number')?.invalid">
+        Contact number is required.
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="submitting">
+        {{ submitting ? 'Saving...' : 'Save' }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,65 @@
+<div class="page-container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Customers</h1>
+    <a routerLink="/customers/new" class="btn btn-primary">+ New Customer</a>
+  </div>
+
+  <div class="mb-3">
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Search by name or email..."
+      [ngModel]="query"
+      (ngModelChange)="onSearchChange($event)"
+    />
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <div class="card">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Contact Number</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let customer of customers">
+          <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+          <td>{{ customer.email }}</td>
+          <td>{{ customer.contact_number }}</td>
+          <td class="text-end">
+            <a [routerLink]="['/customers', customer.id]" class="btn btn-sm btn-outline-secondary me-1">View</a>
+            <a [routerLink]="['/customers', customer.id, 'edit']" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+            <button class="btn btn-sm btn-outline-danger" (click)="deleteCustomer(customer)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && customers.length === 0">
+          <td colspan="4" class="text-center text-muted py-4">No customers found.</td>
+        </tr>
+        <tr *ngIf="loading">
+          <td colspan="4" class="text-center py-4">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <span class="text-muted">{{ total }} total</span>
+    <div>
+      <button class="btn btn-sm btn-outline-secondary me-2" [disabled]="page <= 1" (click)="previousPage()">
+        Previous
+      </button>
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page * perPage >= total"
+        (click)="nextPage()"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>

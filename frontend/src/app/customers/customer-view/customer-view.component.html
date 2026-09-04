@@ -1,0 +1,23 @@
+<div class="page-container">
+  <a routerLink="/customers" class="btn btn-sm btn-link ps-0">&larr; Back to customers</a>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <div class="card p-4" *ngIf="customer">
+    <h1 class="h3">{{ customer.first_name }} {{ customer.last_name }}</h1>
+    <dl class="row mt-3 mb-0">
+      <dt class="col-sm-3">Email</dt>
+      <dd class="col-sm-9">{{ customer.email }}</dd>
+
+      <dt class="col-sm-3">Contact Number</dt>
+      <dd class="col-sm-9">{{ customer.contact_number }}</dd>
+
+      <dt class="col-sm-3">Created</dt>
+      <dd class="col-sm-9">{{ customer.created_at }}</dd>
+    </dl>
+
+    <div class="mt-3">
+      <a [routerLink]="['/customers', customer.id, 'edit']" class="btn btn-primary">Edit</a>
+    </div>
+  </div>
+</div>
