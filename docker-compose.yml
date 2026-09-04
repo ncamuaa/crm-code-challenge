@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  # ---- api: backend Lumen application (PHP-FPM) -----------------------
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: crm_api
+    env_file:
+      - ./api/.env
+    depends_on:
+      - database
+      - searcher
+    volumes:
+      - ./api:/var/www:delegated
+      - api_vendor:/var/www/vendor
+    networks:
+      - crm_network
+
+  # ---- controller: reverse proxy / load balancer in front of api ------
+  controller:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: crm_controller
+    ports:
+      - "8000:80"
+    depends_on:
+      - api
+    networks:
+      - crm_network
+
+  # ---- database: relational store for customer records -----------------
+  database:
+    image: mysql:8.0
+    container_name: crm_database
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: crm
+      MYSQL_USER: crm_user
+      MYSQL_PASSWORD: crm_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---- searcher: Elasticsearch used for customer search ----------------
+  searcher:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: crm_searcher
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---- frontend: Angular SPA (not one of the 4 required services, but
+  #      included so the whole stack runs with one command) -------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - controller
+    networks:
+      - crm_network
+
+networks:
+  crm_network:
+    driver: bridge
+
+volumes:
+  db_data:
+  es_data:
+  api_vendor:

@@ -1,0 +1,5 @@
+vendor
+tests
+.git
+.env
+*.log
