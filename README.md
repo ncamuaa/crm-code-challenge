@@ -57,7 +57,7 @@ cp api/.env.example api/.env
 docker-compose up --build
 ```
 
-First boot takes a minute or two: MySQL starts, Elasticsearch starts, then the api container waits for both, runs migrations, and creates the search index before starting.
+First boot takes a minute or two: MySQL starts, Elasticsearch starts, then the api container waits for both, runs migrations and creates the search index before starting.
 
 - Frontend: http://localhost:4200
 - API: http://localhost:8000/api/customers
