@@ -13,10 +13,25 @@ CRUD app for managing customer records, built for the FieldMagic code challenge.
 ## Architecture
 
 ```
-browser -> frontend (Angular, served by nginx)
-        -> controller (nginx reverse proxy)
-        -> api (Lumen) -> database (MySQL)
-                        -> searcher (Elasticsearch, via Guzzle)
+                 ┌────────────┐
+   browser ───▶  │  frontend  │  (Angular SPA, served by its own nginx)
+                 └─────┬──────┘
+                       │ HTTP (JSON)
+                       ▼
+                 ┌────────────┐
+                 │ controller │  nginx reverse proxy / load balancer
+                 └─────┬──────┘
+                       │ fastcgi
+                       ▼
+                 ┌────────────┐        ┌────────────┐
+                 │    api     │◀──────▶│  database  │  MySQL
+                 │  (Lumen)   │        └────────────┘
+                 └─────┬──────┘
+                       │ HTTP (Guzzle)
+                       ▼
+                 ┌────────────┐
+                 │  searcher  │  Elasticsearch
+                 └────────────┘
 ```
 
 ## Backend notes
@@ -31,7 +46,7 @@ browser -> frontend (Angular, served by nginx)
 ## Prerequisites
 
 - Docker & Docker Compose
-- Ports 8000, 4200, 3306, 9200 free
+- Ports 8000 (API), 4200 (frontend), 3306 (MySQL), 9200 (Elasticsearch) free
 
 ## Running it
 
@@ -42,22 +57,25 @@ cp api/.env.example api/.env
 docker-compose up --build
 ```
 
+First boot takes a minute or two: MySQL starts, Elasticsearch starts, then the api container waits for both, runs migrations, and creates the search index before starting.
+
 - Frontend: http://localhost:4200
 - API: http://localhost:8000/api/customers
 - Elasticsearch: http://localhost:9200
 
-## API
+## API reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/customers | List (paginated) |
+| GET | /api/customers | List (paginated: `page`, `per_page`) |
 | GET | /api/customers?q=term | Search by name/email |
 | GET | /api/customers/{id} | View one |
 | POST | /api/customers | Create |
 | PUT | /api/customers/{id} | Update |
 | DELETE | /api/customers/{id} | Delete |
 
-Body:
+Request/response body:
+
 ```json
 {
   "first_name": "Ada",
@@ -67,7 +85,7 @@ Body:
 }
 ```
 
-## Tests
+## Running tests
 
 ```bash
 cd api
@@ -75,7 +93,7 @@ composer install
 composer test
 ```
 
-## Frontend without Docker
+## Running the frontend without Docker
 
 ```bash
 cd frontend
@@ -87,9 +105,25 @@ npm start
 
 ```
 crm-challenge/
-├── api/          # Lumen backend
-├── frontend/     # Angular SPA
-├── nginx/        # reverse proxy config
+├── api/                  # Lumen backend
+│   ├── app/
+│   │   ├── Console/Commands/   # search:setup artisan command
+│   │   ├── Exceptions/         # error handling
+│   │   ├── Http/Controllers/
+│   │   ├── Http/Requests/      # validation rules
+│   │   ├── Models/
+│   │   ├── Observers/          # syncs Customer -> Elasticsearch
+│   │   ├── Providers/
+│   │   ├── Repositories/       # data access
+│   │   └── Services/           # search (Guzzle -> ES)
+│   ├── database/{migrations,factories}/
+│   ├── tests/{Feature,Unit,Doubles}/
+│   └── Dockerfile
+├── frontend/              # Angular 16 SPA
+│   └── src/app/
+│       ├── core/{models,services}/
+│       └── customers/{customer-list,customer-form,customer-view}/
+├── nginx/                  # controller/load-balancer service
 ├── docker-compose.yml
 └── README.md
 ```
@@ -97,4 +131,5 @@ crm-challenge/
 ## Notes
 
 - MySQL and Elasticsearch data persist in Docker volumes across `docker-compose down`, but not with `-v`.
-- Elasticsearch security is off for local dev simplicity — would be locked down in production.
+- Elasticsearch security is off for local dev simplicity — would be locked down in a real deployment.
+- `api` runs behind the `controller` nginx service, so `docker-compose up --scale api=3` would load-balance across replicas.
